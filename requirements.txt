@@ -3,3 +3,6 @@ langchain-core
 langchain-community
 langchain-ollama
 python-dotenv
+chromadb
+GitPython
+tiktoken
