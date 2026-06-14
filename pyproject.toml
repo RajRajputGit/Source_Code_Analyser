@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "source-code-analyser"
+version = "0.1.0"
+description = "A modular, lightweight Python application for source code analysis."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+# NOTE on pinned versions:
+# - numpy is pinned <2 because torch 2.2.2 and chromadb/sentence-transformers
+#   still ship wheels compiled against the NumPy 1.x ABI. Mixing them with
+#   numpy 2.x triggers the "_ARRAY_API not found" / "module was compiled
+#   using NumPy 1.x" runtime errors.
+# - transformers 4.43.x and sentence-transformers 2.7.x are the last
+#   releases that support torch 2.2.x. transformers >=4.45 requires
+#   torch >=2.4, which is what was disabling PyTorch in the original
+#   traceback. Keeping this stack consistent avoids that mismatch.
+dependencies = [
+    "numpy<2",
+    "torch==2.2.2",
+    "transformers==4.43.4",
+    "tokenizers<0.20",
+    "huggingface-hub<0.25",
+    "sentence-transformers==2.7.0",
+    "langchain",
+    "langchain-core",
+    "langchain-community",
+    "langchain-ollama",
+    "python-dotenv",
+    "chromadb",
+    "GitPython",
+    "tiktoken",
+    "langchain-huggingface",
+    "langchain-groq",
+    "langchain-text-splitters",
+    "langchain-chroma",
+    "ipykernel",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pydantic>=2.6",
+    "requests>=2.31",
+    "streamlit>=1.32",
+]
+
+[tool.setuptools.packages.find]
+# Automatically discover all directories containing an __init__.py file
+where = ["."]
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]

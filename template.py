@@ -11,7 +11,7 @@ def main():
         "src/prompt.py": "# Prompts and prompt templates for the application\n",
         ".env": "# Environment Variables\n",
         "app.py": "# Main entry point for the lightweight Python application\n",
-        "notebook/test.ipynb": ""
+        "notebook/test.ipynb": "",
     }
 
     # 1. Safely check and create the src directory
