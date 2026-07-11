@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local vector store & cloned repos (generated at runtime)
+vectordata/
+repo_sample/
+
+# Notebooks
+notebook/

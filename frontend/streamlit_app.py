@@ -61,6 +61,16 @@ with st.sidebar:
     repo_url = st.text_input("Git Repository URL", value=DEFAULT_REPO)
 
     if st.button("New conversation"):
+        # Ask the backend to delete local vector data & cloned repo
+        # so the next conversation starts completely fresh.
+        try:
+            requests.post(
+                f"{API_BASE}/new-conversation",
+                json={"repo_url": repo_url},
+                timeout=10,
+            )
+        except Exception:
+            pass  # best-effort; the conversation still resets locally
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.messages = []
         st.rerun()

@@ -7,6 +7,8 @@ Layout
   /health  GET  -> liveness check
   /chat    POST -> { "session_id": "...", "question": "..." }
                  -> { "answer": "...", "summary": "..." }
+  /new-conversation POST -> { "repo_url": "..." }
+                         -> clears vector data & cached components for a fresh start
 
 The heavy stuff (clone repo, build vector DB, create LLM, create retriever,
 create stuff-documents chain) is done ONCE on first request and then cached
@@ -19,6 +21,7 @@ Run it
 
 import os
 import sys
+import shutil
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -58,6 +61,12 @@ class ChatResponse(BaseModel):
     summary: str
 
 
+class NewConversationRequest(BaseModel):
+    repo_url: str = Field(
+        None, description="The Git repository URL whose data to clear"
+    )
+
+
 # ---------- One-time setup ----------
 
 DEFAULT_REPO_URL = "https://github.com/RajRajputGit/Source_Code_Analyser.git"
@@ -76,6 +85,7 @@ def _build_components(repo_url: str):
 
     # Determine unique local paths based on the repo name to avoid conflicts.
     import urllib.parse
+
     parsed = urllib.parse.urlparse(repo_url)
     repo_name = parsed.path.strip("/").replace("/", "_").replace(".git", "")
     if not repo_name:
@@ -187,3 +197,41 @@ def chat(req: ChatRequest):
 @app.get("/summary/{session_id}")
 def get_summary(session_id: str):
     return {"session_id": session_id, "summary": sessions.get_summary(session_id)}
+
+
+@app.post("/new-conversation")
+def new_conversation(req: NewConversationRequest):
+    """
+    Clean up vector data and cloned repo for the given repository so the
+    next /chat call rebuilds everything from scratch.
+    """
+    repo_url = req.repo_url or DEFAULT_REPO_URL
+
+    # Derive the same local paths used by _build_components.
+    import urllib.parse
+
+    parsed = urllib.parse.urlparse(repo_url)
+    repo_name = parsed.path.strip("/").replace("/", "_").replace(".git", "")
+    if not repo_name:
+        repo_name = "default_repo"
+
+    vector_dir = Path(f"./vectordata/{repo_name}")
+    repo_dir = Path(f"./repo_sample/{repo_name}")
+
+    deleted = []
+
+    # 1) Remove the persisted Chroma vector store.
+    if vector_dir.exists():
+        shutil.rmtree(vector_dir)
+        deleted.append(str(vector_dir))
+
+    # 2) Remove the cloned repo so it gets re-cloned with fresh code.
+    if repo_dir.exists():
+        shutil.rmtree(repo_dir)
+        deleted.append(str(repo_dir))
+
+    # 3) Drop the cached in-memory components so they get rebuilt.
+    if repo_url in app.state.components:
+        del app.state.components[repo_url]
+
+    return {"status": "ok", "deleted": deleted}
